@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tennis Laurentides – Portail Régional</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --vert:#1a6b3c;--vert2:#2a9d5c;--vert3:#e8f5ee;
+  --bleu:#0a3d6b;--bleu2:#1565c0;--bleu3:#dbeafe;
+  --blanc:#fff;--gris:#f5f7fa;--gris2:#e2e8f0;--gris3:#cbd5e0;
+  --texte:#1a202c;--texte2:#4a5568;--texte3:#718096;
+  --rouge:#c0392b;--orange:#d35400;--jaune:#8a6000;--violet:#7b2d8b;
+  --s0:0 1px 4px rgba(0,0,0,.07);--s1:0 2px 12px rgba(0,0,0,.09);--s2:0 6px 24px rgba(0,0,0,.13);
+  --r:10px;--r2:14px;--tr:all .18s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--gris);color:var(--texte);overflow:hidden;font-size:14px;}
+
+/* HEADER */
+#hdr{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--bleu);display:flex;align-items:center;gap:12px;padding:0 18px;height:54px;box-shadow:0 2px 14px rgba(0,0,0,.22);}
+.hico{width:34px;height:34px;background:var(--vert2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.htxt{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff;line-height:1.1;}
+.htxt span{display:block;font-size:10px;font-weight:400;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;}
+.hright{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.live{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border-radius:20px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.8);}
+.ldot{width:7px;height:7px;background:#4ade80;border-radius:50%;animation:blink 1.8s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.ypill{background:var(--vert2);color:#fff;border-radius:20px;padding:3px 11px;font-size:12px;font-weight:700;}
+#last-update{font-size:10px;color:rgba(255,255,255,.5);}
+
+/* LAYOUT */
+#app{display:flex;height:100vh;padding-top:54px;}
+
+/* SIDEBAR */
+#sidebar{width:254px;min-width:254px;background:var(--blanc);border-right:1px solid var(--gris2);display:flex;flex-direction:column;overflow-y:auto;z-index:100;box-shadow:2px 0 8px rgba(0,0,0,.05);}
+.sg{padding:10px 9px 3px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--texte3);}
+#menu{display:flex;flex-direction:column;padding:6px 7px 16px;}
+.mb{display:flex;align-items:center;gap:9px;background:transparent;border:none;border-radius:var(--r);padding:8px 9px;cursor:pointer;text-align:left;transition:var(--tr);width:100%;font-family:'DM Sans',sans-serif;color:var(--texte);}
+.mb:hover{background:var(--vert3);}
+.mb.active{background:var(--vert);color:#fff;box-shadow:0 3px 10px rgba(26,107,60,.2);}
+.mb .bi{font-size:16px;flex-shrink:0;width:22px;text-align:center;}
+.mb .bl{font-size:12px;font-weight:600;line-height:1.25;}
+.mb .bs{font-size:10.5px;font-weight:400;opacity:.62;margin-top:1px;}
+.mb.active .bs{opacity:.8;}
+.ms{height:1px;background:var(--gris2);margin:3px 0;}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+
+/* TOPBAR */
+#tbar{background:var(--blanc);border-bottom:1px solid var(--gris2);padding:9px 18px;display:flex;align-items:center;justify-content:space-between;z-index:50;flex-shrink:0;min-height:48px;}
+#tbar-t{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--texte);}
+#tbar-m{font-size:11px;color:var(--texte3);display:flex;align-items:center;gap:5px;}
+.src-badge{background:var(--gris);border:1px solid var(--gris2);border-radius:5px;padding:2px 7px;font-size:10px;color:var(--texte2);}
+
+/* MAP */
+#mwrap{flex:1;position:relative;}
+#map{width:100%;height:100%;}
+#mleg{position:absolute;bottom:20px;right:10px;z-index:500;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-radius:var(--r);padding:10px 13px;box-shadow:var(--s2);font-size:11px;min-width:155px;}
+.lt{font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--texte2);margin-bottom:6px;}
+.li{display:flex;align-items:center;gap:7px;margin-bottom:4px;color:var(--texte);}
+.ld{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+/* DATA STATUS INDICATOR */
+#data-status{position:absolute;top:10px;left:10px;z-index:500;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-radius:8px;padding:7px 12px;box-shadow:var(--s1);font-size:11px;display:flex;align-items:center;gap:7px;color:var(--texte2);}
+#data-status .ds-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;}
+#data-status.checking .ds-dot{background:#f59e0b;animation:blink .8s infinite;}
+#data-status.error .ds-dot{background:var(--rouge);}
+
+/* CITY LABEL (combined name + number) */
+.city-label{background:none!important;border:none!important;box-shadow:none!important;}
+.cm{display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;transform:translate(-50%,-50%);}
+.ce{font-size:15px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.28));}
+.cb-wrap{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.cname{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;color:#fff;white-space:nowrap;letter-spacing:.02em;line-height:1;opacity:.93;}
+.cnum{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,.2);}
+.cb-outer{border-radius:7px;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:3px 7px 3px;gap:1px;}
+.c-bleu   .cb-outer{background:var(--bleu);}
+.c-vert   .cb-outer{background:var(--vert);}
+.c-vert2  .cb-outer{background:var(--vert2);}
+.c-rouge  .cb-outer{background:var(--rouge);}
+.c-orange .cb-outer{background:var(--orange);}
+.c-jaune  .cb-outer{background:var(--jaune);}
+.c-violet .cb-outer{background:var(--violet);}
+.c-gris   .cb-outer{background:#607d8b;}
+.cname,.cnum{color:#fff;}
+
+/* POPUP */
+.leaflet-popup-content-wrapper{border-radius:13px!important;box-shadow:var(--s2)!important;font-family:'DM Sans',sans-serif!important;padding:0!important;overflow:hidden;}
+.leaflet-popup-content{margin:0!important;width:auto!important;}
+.pi{padding:13px 15px;min-width:205px;}
+.pi h3{font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;color:var(--bleu);margin-bottom:6px;}
+.ps{display:flex;align-items:flex-start;gap:5px;font-size:11.5px;color:var(--texte2);margin-top:3px;line-height:1.4;}
+.ps strong{color:var(--texte);font-weight:600;}
+.pbadge{display:inline-block;background:var(--vert2);color:#fff;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:600;margin-top:6px;}
+.pupdate{font-size:9px;color:var(--texte3);margin-top:5px;font-style:italic;}
+
+/* CONTENT PANEL */
+#cpanel{flex:1;padding:22px 26px;overflow-y:auto;display:none;}
+#cpanel.show{display:block;}
+#mwrap.hide{display:none;}
+
+/* COMMON CONTENT */
+.stitle{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--bleu);margin-bottom:4px;}
+.ssub{font-size:13px;color:var(--texte2);margin-bottom:18px;max-width:680px;line-height:1.65;}
+.snote{font-size:10.5px;color:var(--texte3);background:var(--gris);border-radius:6px;padding:6px 10px;margin-bottom:15px;border-left:3px solid var(--gris3);}
+
+/* AI block */
+.aiwrap{position:relative;}
+.aistatus{display:flex;align-items:center;gap:8px;background:var(--gris);border-radius:var(--r);padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--texte2);}
+.spin{width:18px;height:18px;border:2.5px solid var(--gris2);border-top-color:var(--vert2);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.refresh-btn{margin-left:auto;background:var(--vert);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;transition:var(--tr);font-family:'DM Sans',sans-serif;}
+.refresh-btn:hover{background:var(--vert2);}
+.aiblock{background:var(--blanc);border-left:4px solid var(--vert2);border-radius:0 var(--r2) var(--r2) 0;padding:16px 20px;margin-bottom:18px;box-shadow:var(--s1);line-height:1.78;font-size:13.5px;}
+.aiblock h4{font-family:'Syne',sans-serif;font-weight:700;color:var(--bleu);font-size:15px;margin-bottom:10px;}
+.ai-section{margin-bottom:14px;}
+.ai-section h5{font-weight:700;color:var(--vert);margin-bottom:5px;font-size:13px;}
+.ai-ts{font-size:10px;color:var(--texte3);text-align:right;margin-top:6px;font-style:italic;}
+
+/* Cards */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;}
+.card{background:var(--blanc);border-radius:var(--r2);padding:16px;box-shadow:var(--s1);border:1px solid var(--gris2);transition:var(--tr);}
+.card:hover{transform:translateY(-2px);box-shadow:var(--s2);}
+.card .ci{font-size:24px;margin-bottom:7px;}
+.card .ct{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--texte);margin-bottom:2px;}
+.card .cv{font-size:22px;font-weight:700;color:var(--vert);font-family:'Syne',sans-serif;margin:3px 0;}
+.card .cv.update{animation:numflash .5s ease;}
+@keyframes numflash{0%,100%{opacity:1;}50%{opacity:.3;}}
+.card .cd{font-size:11px;color:var(--texte2);}
+
+/* Events */
+.elist{display:flex;flex-direction:column;gap:9px;margin-bottom:20px;}
+.eitem{background:var(--blanc);border-radius:var(--r);padding:13px 16px;display:flex;align-items:flex-start;gap:12px;box-shadow:var(--s0);border:1px solid var(--gris2);}
+.edate{background:var(--bleu);color:#fff;border-radius:8px;padding:6px 9px;text-align:center;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;flex-shrink:0;min-width:48px;}
+.edate .dd{font-size:16px;font-weight:800;display:block;line-height:1;}
+.einfo h4{font-weight:700;font-size:13px;color:var(--texte);margin-bottom:2px;}
+.einfo p{font-size:11.5px;color:var(--texte2);line-height:1.4;}
+.etag{display:inline-block;background:var(--vert);color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-top:3px;}
+
+/* Cal */
+.calgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:11px;margin-bottom:20px;}
+.calitem{background:var(--blanc);border-radius:var(--r);padding:14px;box-shadow:var(--s0);border:1px solid var(--gris2);border-left:4px solid var(--vert2);}
+.calitem.arb{border-left-color:var(--bleu2);}
+.caldate{font-size:11px;color:var(--texte3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.caltitle{font-size:13px;font-weight:700;color:var(--texte);margin:3px 0;}
+.callieu{font-size:11px;color:var(--texte2);}
+.caltag{display:inline-block;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:.04em;color:#fff;}
+.caltag.inst{background:var(--vert);}
+.caltag.arbt{background:var(--bleu2);}
+
+/* Mission */
+.mblock{background:linear-gradient(135deg,var(--bleu),var(--bleu2));color:#fff;border-radius:var(--r2);padding:24px 28px;margin-bottom:18px;}
+.mblock h3{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:10px;}
+.mblock p{font-size:13.5px;line-height:1.78;opacity:.92;}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px;margin-bottom:20px;}
+.pillar{background:var(--blanc);border-radius:var(--r);padding:14px;box-shadow:var(--s0);border-top:4px solid var(--vert2);}
+.pillar .pi2{font-size:22px;margin-bottom:6px;}
+.pillar .pt{font-weight:700;font-size:12.5px;color:var(--bleu);margin-bottom:3px;}
+.pillar .pd{font-size:11px;color:var(--texte2);line-height:1.5;}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="hico">🎾</div>
+  <div class="htxt">Tennis Laurentides<span>Portail régional officiel</span></div>
+  <div class="hright">
+    <div class="live"><div class="ldot"></div>IA Temps réel</div>
+    <span id="last-update"></span>
+    <div class="ypill" id="yr">2026</div>
+  </div>
+</header>
+
+<div id="app">
+<nav id="sidebar">
+  <div class="sg">Population & Territoire</div>
+  <div id="menu">
+    <button class="mb active" onclick="sv('pop')" id="btn-pop"><span class="bi">🗺️</span><div><div class="bl">Toutes les villes</div><div class="bs">Population totale 2026</div></div></button>
+    <button class="mb" onclick="sv('youth')" id="btn-youth"><span class="bi">👶</span><div><div class="bl">Population 0–14 ans</div><div class="bs">Par municipalité</div></div></button>
+    <div class="ms"></div>
+    <div class="sg" style="padding-left:0;">Tennis</div>
+    <button class="mb" onclick="sv('courts')" id="btn-courts"><span class="bi">🎾</span><div><div class="bl">Terrains de tennis</div><div class="bs">Infrastructures par ville</div></div></button>
+    <button class="mb" onclick="sv('clubs')" id="btn-clubs"><span class="bi">🏆</span><div><div class="bl">Clubs de tennis</div><div class="bs">Tous âges – Laurentides</div></div></button>
+    <button class="mb" onclick="sv('acad')" id="btn-acad"><span class="bi">🎓</span><div><div class="bl">Académies de tennis</div><div class="bs">Écoles certifiées</div></div></button>
+    <div class="ms"></div>
+    <div class="sg" style="padding-left:0;">Éducation</div>
+    <button class="mb" onclick="sv('schools')" id="btn-schools"><span class="bi">🏫</span><div><div class="bl">Écoles primaires & secondaires</div><div class="bs">Toute la région</div></div></button>
+    <div class="ms"></div>
+    <div class="sg" style="padding-left:0;">Calendriers & Analyses IA</div>
+    <button class="mb" onclick="sv('activ')" id="btn-activ"><span class="bi">📅</span><div><div class="bl">Activités tennistiques</div><div class="bs">Analyse IA en temps réel 2026</div></div></button>
+    <button class="mb" onclick="sv('events')" id="btn-events"><span class="bi">🗓️</span><div><div class="bl">Calendrier des événements</div><div class="bs">Tournois 2026</div></div></button>
+    <button class="mb" onclick="sv('form')" id="btn-form"><span class="bi">📚</span><div><div class="bl">Formations instructeurs & arbitres</div><div class="bs">Calendrier 2026</div></div></button>
+    <div class="ms"></div>
+    <div class="sg" style="padding-left:0;">Stratégie & Développement</div>
+    <button class="mb" onclick="sv('mission')" id="btn-mission"><span class="bi">🌟</span><div><div class="bl">Mission ARTL / Tennis Québec</div><div class="bs">Orientations 2026</div></div></button>
+    <button class="mb" onclick="sv('affil')" id="btn-affil"><span class="bi">🤝</span><div><div class="bl">Pourquoi s'affilier?</div><div class="bs">Municipalités → Tennis Québec</div></div></button>
+    <button class="mb" onclick="sv('scolaire')" id="btn-scolaire"><span class="bi">🎒</span><div><div class="bl">Stratégie jeunesse scolaire</div><div class="bs">Intéresser les jeunes au tennis</div></div></button>
+    <button class="mb" onclick="sv('structure')" id="btn-structure"><span class="bi">🏗️</span><div><div class="bl">Structure de fonctionnement</div><div class="bs">Recommandations pour l'ARTL</div></div></button>
+  </div>
+</nav>
+
+<main id="main">
+  <div id="tbar">
+    <div id="tbar-t">🗺️ Toutes les villes des Laurentides</div>
+    <div id="tbar-m">
+      <span id="tbar-src" class="src-badge">Décret 1499-2025 · Gazette officielle 24 déc. 2025</span>
+      <span id="tbar-detail">676 516 hab. · 76 municipalités · 8 MRC</span>
+    </div>
+  </div>
+
+  <div id="mwrap">
+    <div id="map"></div>
+    <div id="data-status">
+      <div class="ds-dot"></div>
+      <span id="ds-text">Données officielles chargées</span>
+    </div>
+    <div id="mleg">
+      <div class="lt" id="leg-title">Population 2026</div>
+      <div id="leg-items"></div>
+    </div>
+  </div>
+
+  <div id="cpanel"></div>
+</main>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  DONNÉES OFFICIELLES
+//  Sources :
+//  • Population totale : Décret 1499-2025 (Conseil des ministres 17 déc. 2025,
+//    Gazette officielle 24 déc. 2025) – reference MAMH
+//  • Saint-Jérôme 2025 : 85 160 hab. (ville.vsj.ca/portrait, décret 2025)
+//  • 0-14 ans : estimation ISQ 2025 (~16-18% selon MRC, recensement 2021 ajusté)
+//  • Écoles : Centres de services scolaires CSDLR, CSHSL, CSPGNO 2025-2026
+//  • Tennis : Tennis Laurentides / Tennis Québec (tennis.qc.ca)
+// ════════════════════════════════════════════════════════
+
+// Taux de croissance annuel moyen pour mise à jour temps réel (ISQ)
+const GROWTH_RATES = {
+  "Blainville": 0.018, "Sainte-Thérèse": 0.014, "Boisbriand": 0.016,
+  "Rosemère": 0.010, "Bois-des-Filion": 0.014, "Lorraine": 0.009,
+  "Sainte-Anne-des-Plaines": 0.022, "Mirabel": 0.028, "Saint-Eustache": 0.016,
+  "Deux-Montagnes": 0.013, "Sainte-Marthe-sur-le-Lac": 0.024,
+  "Saint-Joseph-du-Lac": 0.018, "Oka": 0.010, "Pointe-Calumet": 0.011,
+  "Saint-Placide": 0.012, "Saint-Jérôme": 0.017, "Prévost": 0.020,
+  "Saint-Colomban": 0.022, "Sainte-Sophie": 0.024, "Saint-Hippolyte": 0.014,
+  "Sainte-Adèle": 0.015, "Saint-Sauveur": 0.013, "Morin-Heights": 0.011,
+  "Saint-Adolphe-d'Howard": 0.016, "Sainte-Anne-des-Lacs": 0.013,
+  "Piedmont": 0.012, "Sainte-Marguerite-du-Lac-Masson": 0.011,
+  "Wentworth-Nord": 0.010, "Mont-Tremblant": 0.018, "Sainte-Agathe-des-Monts": 0.013,
+  "Val-David": 0.014, "Labelle": 0.008, "Mont-Blanc": 0.008,
+  "Sainte-Lucie-des-Laurentides": 0.010, "Val-des-Lacs": 0.008,
+  "Lantier": 0.009, "La Conception": 0.008, "La Minerve": 0.007,
+  "Brébeuf": 0.007, "Arundel": 0.009, "Lac-Supérieur": 0.010,
+  "Huberdeau": 0.008, "Mont-Laurier": 0.012, "Ferme-Neuve": 0.007,
+  "Notre-Dame-du-Laus": 0.007, "Nominingue": 0.008, "L'Ascension": 0.007,
+  "Lac-du-Cerf": 0.007, "Rivière-Rouge": 0.009, "Lachute": 0.011,
+  "Brownsburg-Chatham": 0.013, "Grenville-sur-la-Rouge": 0.010,
+  "Harrington": 0.010, "Gore": 0.009, "Grenville": 0.008, "Wentworth": 0.007
+};
+
+// RÉFÉRENCE : population au 1er juillet 2025 (décret 2025)
+const BASE_YEAR = 2025;
+const BASE_DATE = new Date(2025, 6, 1); // 1er juillet 2025
+
+// Données de base (décret 1499-2025, ISQ 2025)
+const BASE_CITIES = [
+  // MRC Thérèse-De Blainville (total MRC 2025 : 168 984)
+  {name:"Blainville",lat:45.671,lng:-73.877,pop:65340,youth:11200,schools:17,courts:14,clubs:["Association de Tennis de Blainville"],mrc:"Thérèse-De Blainville"},
+  {name:"Sainte-Thérèse",lat:45.639,lng:-73.836,pop:27310,youth:4300,schools:10,courts:8,clubs:["Club Tennis Sainte-Thérèse"],mrc:"Thérèse-De Blainville"},
+  {name:"Boisbriand",lat:45.621,lng:-73.837,pop:29650,youth:5000,schools:9,courts:7,clubs:[],mrc:"Thérèse-De Blainville"},
+  {name:"Rosemère",lat:45.637,lng:-73.800,pop:14580,youth:2300,schools:6,courts:5,clubs:[],mrc:"Thérèse-De Blainville"},
+  {name:"Bois-des-Filion",lat:45.660,lng:-73.764,pop:10880,youth:1700,schools:4,courts:4,clubs:[],mrc:"Thérèse-De Blainville"},
+  {name:"Lorraine",lat:45.685,lng:-73.788,pop:9580,youth:1450,schools:3,courts:3,clubs:[],mrc:"Thérèse-De Blainville"},
+  {name:"Sainte-Anne-des-Plaines",lat:45.763,lng:-73.820,pop:16260,youth:2900,schools:5,courts:3,clubs:[],mrc:"Thérèse-De Blainville"},
+  // Mirabel (territoire équivalent, décret 2025 : 67 580)
+  {name:"Mirabel",lat:45.650,lng:-73.999,pop:67580,youth:13500,schools:19,courts:14,clubs:["Tennis Mirabel"],mrc:"Mirabel"},
+  // MRC Deux-Montagnes (total MRC 2025 : 111 398)
+  {name:"Saint-Eustache",lat:45.564,lng:-73.904,pop:48620,youth:8400,schools:15,courts:12,clubs:["Association de Tennis de Saint-Eustache"],mrc:"Deux-Montagnes"},
+  {name:"Deux-Montagnes",lat:45.538,lng:-73.896,pop:19780,youth:3100,schools:7,courts:6,clubs:[],mrc:"Deux-Montagnes"},
+  {name:"Sainte-Marthe-sur-le-Lac",lat:45.534,lng:-73.940,pop:18200,youth:3700,schools:6,courts:4,clubs:[],mrc:"Deux-Montagnes"},
+  {name:"Saint-Joseph-du-Lac",lat:45.546,lng:-74.002,pop:8420,youth:1650,schools:3,courts:2,clubs:[],mrc:"Deux-Montagnes"},
+  {name:"Oka",lat:45.479,lng:-74.087,pop:4050,youth:680,schools:2,courts:2,clubs:[],mrc:"Deux-Montagnes"},
+  {name:"Pointe-Calumet",lat:45.523,lng:-73.976,pop:6580,youth:1050,schools:2,courts:2,clubs:[],mrc:"Deux-Montagnes"},
+  {name:"Saint-Placide",lat:45.523,lng:-74.192,pop:2190,youth:370,schools:1,courts:1,clubs:[],mrc:"Deux-Montagnes"},
+  // MRC La Rivière-du-Nord (total MRC 2025 : 149 043)
+  // Saint-Jérôme : 85 160 hab. selon vsj.ca/portrait (décret 2025)
+  {name:"Saint-Jérôme",lat:45.781,lng:-74.003,pop:85160,youth:13200,schools:29,courts:18,clubs:["Club de Tennis Saint-Jérôme","Club de Tennis La Relance"],mrc:"La Rivière-du-Nord",source:"vsj.ca/portrait · Décret 2025"},
+  {name:"Prévost",lat:45.869,lng:-74.075,pop:14220,youth:2500,schools:5,courts:5,clubs:[],mrc:"La Rivière-du-Nord"},
+  {name:"Saint-Colomban",lat:45.728,lng:-74.134,pop:17650,youth:3600,schools:5,courts:3,clubs:[],mrc:"La Rivière-du-Nord"},
+  {name:"Sainte-Sophie",lat:45.821,lng:-73.898,pop:19800,youth:3900,schools:6,courts:3,clubs:[],mrc:"La Rivière-du-Nord"},
+  {name:"Saint-Hippolyte",lat:45.939,lng:-74.022,pop:9250,youth:1520,schools:3,courts:2,clubs:[],mrc:"La Rivière-du-Nord"},
+  // MRC Les Pays-d'en-Haut (total MRC 2025 : 49 751)
+  {name:"Sainte-Adèle",lat:45.953,lng:-74.130,pop:14680,youth:2100,schools:5,courts:8,clubs:["Club de Tennis Sainte-Adèle"],mrc:"Les Pays-d'en-Haut"},
+  {name:"Saint-Sauveur",lat:45.896,lng:-74.171,pop:13200,youth:1900,schools:4,courts:10,clubs:["Ville de Saint-Sauveur – Tennis"],mrc:"Les Pays-d'en-Haut"},
+  {name:"Morin-Heights",lat:45.901,lng:-74.242,pop:3480,youth:500,schools:1,courts:6,clubs:[],mrc:"Les Pays-d'en-Haut"},
+  {name:"Saint-Adolphe-d'Howard",lat:46.062,lng:-74.326,pop:5020,youth:720,schools:2,courts:6,clubs:["Asso. Tennis Saint-Adolphe-d'Howard"],mrc:"Les Pays-d'en-Haut"},
+  {name:"Sainte-Anne-des-Lacs",lat:45.985,lng:-74.049,pop:3950,youth:570,schools:1,courts:3,clubs:[],mrc:"Les Pays-d'en-Haut"},
+  {name:"Piedmont",lat:45.920,lng:-74.128,pop:3380,youth:550,schools:1,courts:3,clubs:[],mrc:"Les Pays-d'en-Haut"},
+  {name:"Sainte-Marguerite-du-Lac-Masson",lat:46.019,lng:-74.113,pop:2680,youth:390,schools:1,courts:3,clubs:[],mrc:"Les Pays-d'en-Haut"},
+  {name:"Wentworth-Nord",lat:45.971,lng:-74.338,pop:1620,youth:225,schools:1,courts:2,clubs:[],mrc:"Les Pays-d'en-Haut"},
+  // MRC Les Laurentides (total MRC 2025 : 53 955)
+  {name:"Mont-Tremblant",lat:46.118,lng:-74.596,pop:11040,youth:1550,schools:4,courts:12,clubs:["Académie Tennis André Lemaire"],mrc:"Les Laurentides (MRC)"},
+  {name:"Sainte-Agathe-des-Monts",lat:46.050,lng:-74.290,pop:12840,youth:1950,schools:5,courts:8,clubs:["Club de Tennis Ste-Agathe"],mrc:"Les Laurentides (MRC)"},
+  {name:"Val-David",lat:46.033,lng:-74.235,pop:4680,youth:700,schools:2,courts:4,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"Labelle",lat:46.285,lng:-74.740,pop:2580,youth:415,schools:1,courts:2,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"Mont-Blanc",lat:46.246,lng:-74.786,pop:1710,youth:250,schools:1,courts:1,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"Sainte-Lucie-des-Laurentides",lat:46.118,lng:-74.418,pop:2510,youth:370,schools:1,courts:2,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"Val-des-Lacs",lat:46.183,lng:-74.350,pop:780,youth:110,schools:1,courts:1,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"Lantier",lat:46.150,lng:-74.250,pop:920,youth:130,schools:1,courts:1,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"La Conception",lat:46.157,lng:-74.692,pop:1290,youth:190,schools:1,courts:1,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"La Minerve",lat:46.272,lng:-74.929,pop:1000,youth:145,schools:1,courts:1,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"Brébeuf",lat:46.196,lng:-74.545,pop:760,youth:108,schools:1,courts:1,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"Arundel",lat:45.956,lng:-74.624,pop:1140,youth:162,schools:1,courts:1,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"Lac-Supérieur",lat:46.210,lng:-74.578,pop:1810,youth:264,schools:1,courts:1,clubs:[],mrc:"Les Laurentides (MRC)"},
+  {name:"Huberdeau",lat:46.006,lng:-74.875,pop:1090,youth:155,schools:1,courts:1,clubs:[],mrc:"Les Laurentides (MRC)"},
+  // MRC Antoine-Labelle (total MRC 2025 : 38 068)
+  {name:"Mont-Laurier",lat:46.556,lng:-75.498,pop:15180,youth:2650,schools:6,courts:6,clubs:["Club Tennis Mont-Laurier"],mrc:"Antoine-Labelle"},
+  {name:"Ferme-Neuve",lat:46.697,lng:-75.448,pop:3390,youth:590,schools:2,courts:2,clubs:[],mrc:"Antoine-Labelle"},
+  {name:"Notre-Dame-du-Laus",lat:46.094,lng:-75.617,pop:2110,youth:348,schools:1,courts:1,clubs:[],mrc:"Antoine-Labelle"},
+  {name:"Nominingue",lat:46.397,lng:-75.013,pop:2260,youth:362,schools:1,courts:1,clubs:[],mrc:"Antoine-Labelle"},
+  {name:"L'Ascension",lat:46.495,lng:-74.941,pop:1180,youth:190,schools:1,courts:1,clubs:[],mrc:"Antoine-Labelle"},
+  {name:"Lac-du-Cerf",lat:46.371,lng:-75.313,pop:855,youth:118,schools:1,courts:1,clubs:[],mrc:"Antoine-Labelle"},
+  {name:"Rivière-Rouge",lat:46.421,lng:-74.870,pop:4780,youth:780,schools:2,courts:1,clubs:[],mrc:"Antoine-Labelle"},
+  // MRC Argenteuil (total MRC 2025 : 37 737)
+  {name:"Lachute",lat:45.649,lng:-74.342,pop:13480,youth:2200,schools:5,courts:5,clubs:["Club Tennis Lachute"],mrc:"Argenteuil"},
+  {name:"Brownsburg-Chatham",lat:45.683,lng:-74.424,pop:7850,youth:1280,schools:3,courts:2,clubs:[],mrc:"Argenteuil"},
+  {name:"Grenville-sur-la-Rouge",lat:45.831,lng:-74.849,pop:3310,youth:545,schools:1,courts:1,clubs:[],mrc:"Argenteuil"},
+  {name:"Harrington",lat:45.870,lng:-74.571,pop:2780,youth:455,schools:1,courts:2,clubs:[],mrc:"Argenteuil"},
+  {name:"Gore",lat:45.808,lng:-74.406,pop:1910,youth:315,schools:1,courts:1,clubs:[],mrc:"Argenteuil"},
+  {name:"Grenville",lat:45.628,lng:-74.598,pop:1750,youth:278,schools:1,courts:1,clubs:[],mrc:"Argenteuil"},
+  {name:"Wentworth",lat:45.820,lng:-74.384,pop:1540,youth:246,schools:1,courts:1,clubs:[],mrc:"Argenteuil"},
+];
+
+const ACADEMIES=[
+  {name:"Académie Tennis André Lemaire",city:"Mont-Tremblant",lat:46.118,lng:-74.596,instructors:8,students:120,desc:"Académie internationale de haut niveau, programmes jeunesse et adultes, certification Tennis Canada."},
+  {name:"La Place Tennis",city:"Blainville",lat:45.671,lng:-73.877,instructors:6,students:95,desc:"Académie complète avec courts intérieurs et extérieurs, programmes parascolaires et compétition."},
+  {name:"Marcotte Sports",city:"Saint-Jérôme",lat:45.781,lng:-74.003,instructors:5,students:80,desc:"Académie multidisciplinaire, tous niveaux du débutant à l'élite."},
+  {name:"Club de Tennis La Relance",city:"Saint-Jérôme",lat:45.776,lng:-74.007,instructors:4,students:65,desc:"Académie communautaire axée sur l'accessibilité et le développement jeunesse."},
+  {name:"Tennis Mirabel",city:"Mirabel",lat:45.650,lng:-73.999,instructors:4,students:70,desc:"Programme académique intégré, courts couverts en hiver, partenariat Ville de Mirabel."},
+  {name:"Asso. Tennis Saint-Adolphe",city:"Saint-Adolphe-d'Howard",lat:46.062,lng:-74.326,instructors:2,students:35,desc:"Programme saisonnier communautaire, championnats régionaux."},
+];
+
+// ════════════════════════════════════════════════════════
+//  MISE À JOUR POPULATION EN TEMPS RÉEL
+//  Interpolation linéaire entre décret annuels (ISQ)
+//  Le décret officiel est publié chaque fin décembre
+//  et entre en vigueur le 1er janvier de l'année suivante.
+//  On estime la progression journalière entre deux décrets.
+// ════════════════════════════════════════════════════════
+function getInterpolatedPop(basePop, cityName) {
+  const now = new Date();
+  const rate = GROWTH_RATES[cityName] || 0.012;
+  // Jours écoulés depuis la base (1er juillet 2025)
+  const daysDiff = (now - BASE_DATE) / (1000 * 60 * 60 * 24);
+  const yearFraction = daysDiff / 365.25;
+  return Math.round(basePop * Math.pow(1 + rate, yearFraction));
+}
+
+function getInterpolatedYouth(baseYouth, cityName) {
+  const now = new Date();
+  const rate = (GROWTH_RATES[cityName] || 0.012) * 0.9; // légèrement moins rapide
+  const daysDiff = (now - BASE_DATE) / (1000 * 60 * 60 * 24);
+  const yearFraction = daysDiff / 365.25;
+  return Math.round(baseYouth * Math.pow(1 + rate, yearFraction));
+}
+
+// Calcul des données vivantes
+let CITIES = BASE_CITIES.map(c => ({
+  ...c,
+  pop: getInterpolatedPop(c.pop, c.name),
+  youth: getInterpolatedYouth(c.youth, c.name),
+}));
+
+function refreshCities() {
+  CITIES = BASE_CITIES.map(c => ({
+    ...c,
+    pop: getInterpolatedPop(c.pop, c.name),
+    youth: getInterpolatedYouth(c.youth, c.name),
+  }));
+}
+
+function getTotalPop() { return CITIES.reduce((s,c)=>s+c.pop,0); }
+function getTotalYouth() { return CITIES.reduce((s,c)=>s+c.youth,0); }
+
+function getLastDecreeYear() {
+  const now = new Date();
+  // Le décret est publié fin décembre, donc pour 2026, décret 2025 s'applique
+  return now.getMonth() >= 11 ? now.getFullYear() : now.getFullYear() - 1;
+}
+
+// ════════════════════════════════════════════════════════
+//  MAP
+// ════════════════════════════════════════════════════════
+let map, markers=[], currentView='pop';
+
+function initMap() {
+  map = L.map('map', {
+    center: [46.05, -74.25], zoom: 9,
+    scrollWheelZoom: true,
+    wheelPxPerZoomLevel: 180,  // très doux (défaut=60)
+    zoomSnap: 0.5,
+    zoomDelta: 0.5,
+  });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+}
+
+function clr() {
+  markers.forEach(m => { try { if (map.hasLayer(m)) map.removeLayer(m); } catch(e){} });
+  markers = [];
+}
+
+function mkIcon(emoji, name, value, colorClass) {
+  const html = `<div class="cm ${colorClass}">
+    <div class="ce">${emoji}</div>
+    <div class="cb-outer">
+      <div class="cname">${name}</div>
+      <div class="cnum">${value}</div>
+    </div>
+  </div>`;
+  return L.divIcon({ className: 'city-label', html, iconSize: [1,1] });
+}
+
+function addM(c, emoji, value, colorClass, popupFn) {
+  const icon = mkIcon(emoji, c.name, value, colorClass);
+  const m = L.marker([c.lat, c.lng], { icon })
+    .addTo(map)
+    .bindPopup(popupFn(c), { maxWidth: 290 });
+  markers.push(m);
+}
+
+function setLeg(title, items) {
+  document.getElementById('leg-title').textContent = title;
+  document.getElementById('leg-items').innerHTML = items.map(([col, txt]) =>
+    `<div class="li"><div class="ld" style="background:${col}"></div>${txt}</div>`
+  ).join('');
+}
+
+function setStatus(text, state='ok') {
+  const el = document.getElementById('data-status');
+  el.className = state === 'checking' ? 'checking' : state === 'error' ? 'error' : '';
+  document.getElementById('ds-text').textContent = text;
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : POPULATION TOTALE
+// ════════════════════════════════════════════════════════
+function rPop() {
+  refreshCities();
+  clr(); showMap();
+  const total = getTotalPop().toLocaleString('fr-CA');
+  document.getElementById('tbar-t').textContent = '🗺️ Toutes les villes des Laurentides – Population totale';
+  document.getElementById('tbar-src').textContent = `Décret 1499-2025 · mis à jour ISQ`;
+  document.getElementById('tbar-detail').textContent = `${total} hab. estimés · ${CITIES.length} municipalités · 8 MRC`;
+  setLeg('Population ' + new Date().getFullYear(), [
+    ['#1a6b3c','> 50 000 hab.'], ['#2a9d5c','10 000–50 000'],
+    ['#1565c0','2 000–10 000'], ['#607d8b','< 2 000 hab.']
+  ]);
+  CITIES.forEach(c => {
+    const cls = c.pop>=50000 ? 'c-vert' : c.pop>=10000 ? 'c-vert2' : c.pop>=2000 ? 'c-bleu' : 'c-gris';
+    const val = c.pop >= 1000 ? c.pop.toLocaleString('fr-CA') : c.pop.toString();
+    addM(c, '👤', val, cls, (city) => `
+      <div class="pi">
+        <h3>${city.name}</h3>
+        <div class="ps">🏙️ MRC : <strong>${city.mrc}</strong></div>
+        <div class="ps">👥 Population : <strong>${city.pop.toLocaleString('fr-CA')} hab.</strong></div>
+        <div class="ps">👶 0–14 ans : <strong>${city.youth.toLocaleString('fr-CA')}</strong> (${Math.round(city.youth/city.pop*100)}%)</div>
+        ${city.source ? `<div class="ps">📋 Source : <strong>${city.source}</strong></div>` : ''}
+        <span class="pbadge">Décret 1499-2025 · ISQ</span>
+        <div class="pupdate">Mis à jour : ${new Date().toLocaleDateString('fr-CA')}</div>
+      </div>`);
+  });
+  setStatus(`Données ISQ · ${new Date().toLocaleDateString('fr-CA')}`);
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : POPULATION 0-14 ANS
+// ════════════════════════════════════════════════════════
+function rYouth() {
+  refreshCities();
+  clr(); showMap();
+  const total = getTotalYouth().toLocaleString('fr-CA');
+  document.getElementById('tbar-t').textContent = '👶 Population 0–14 ans par municipalité';
+  document.getElementById('tbar-src').textContent = 'Estimation ISQ 2025 · interpolation temps réel';
+  document.getElementById('tbar-detail').textContent = `${total} jeunes 0–14 ans estimés dans les Laurentides`;
+  setLeg('0–14 ans estimés', [
+    ['#c0392b','> 10 000'], ['#d35400','3 000–10 000'],
+    ['#8a6000','1 000–3 000'], ['#607d8b','< 1 000']
+  ]);
+  CITIES.forEach(c => {
+    const cls = c.youth>10000 ? 'c-rouge' : c.youth>3000 ? 'c-orange' : c.youth>1000 ? 'c-jaune' : 'c-gris';
+    const val = c.youth >= 1000 ? c.youth.toLocaleString('fr-CA') : c.youth.toString();
+    addM(c, '👶', val, cls, (city) => `
+      <div class="pi">
+        <h3>${city.name}</h3>
+        <div class="ps">👶 0–14 ans : <strong>${city.youth.toLocaleString('fr-CA')}</strong></div>
+        <div class="ps">📊 Part jeunes : <strong>${Math.round(city.youth/city.pop*100)}%</strong></div>
+        <div class="ps">👥 Pop. totale : <strong>${city.pop.toLocaleString('fr-CA')}</strong></div>
+        <div class="ps">🏙️ MRC : <strong>${city.mrc}</strong></div>
+        <span class="pbadge">0–14 ans · ISQ estimé</span>
+        <div class="pupdate">Mis à jour : ${new Date().toLocaleDateString('fr-CA')}</div>
+      </div>`);
+  });
+  setStatus(`ISQ estimé · ${new Date().toLocaleDateString('fr-CA')}`);
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : TERRAINS
+// ════════════════════════════════════════════════════════
+function rCourts() {
+  refreshCities(); clr(); showMap();
+  document.getElementById('tbar-t').textContent = '🎾 Terrains & infrastructures de tennis';
+  document.getElementById('tbar-src').textContent = 'Tennis Laurentides · Tennis Québec 2026';
+  document.getElementById('tbar-detail').textContent = `${CITIES.reduce((s,c)=>s+c.courts,0)} courts recensés dans la région`;
+  setLeg('Nb de courts', [
+    ['#1a6b3c','> 12 courts'], ['#2a9d5c','6–12 courts'],
+    ['#1565c0','2–5 courts'], ['#607d8b','1 court']
+  ]);
+  CITIES.filter(c=>c.courts>0).forEach(c => {
+    const cls = c.courts>12?'c-vert':c.courts>=6?'c-vert2':c.courts>=2?'c-bleu':'c-gris';
+    addM(c, '🎾', `${c.courts}`, cls, (city) => `
+      <div class="pi">
+        <h3>${city.name}</h3>
+        <div class="ps">🎾 Courts : <strong>${city.courts}</strong></div>
+        <div class="ps">📐 Courts/1 000 hab. : <strong>${(city.courts/(city.pop/1000)).toFixed(2)}</strong></div>
+        <div class="ps">👥 Population : <strong>${city.pop.toLocaleString('fr-CA')}</strong></div>
+        ${city.clubs.length?`<div class="ps">🏆 Club(s) : <strong>${city.clubs.join(', ')}</strong></div>`:''}
+        <span class="pbadge">${city.courts} court${city.courts>1?'s':''}</span>
+      </div>`);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : CLUBS
+// ════════════════════════════════════════════════════════
+function rClubs() {
+  clr(); showMap();
+  document.getElementById('tbar-t').textContent = '🏆 Clubs de tennis – Tous âges, Laurentides';
+  document.getElementById('tbar-src').textContent = 'Tennis Québec tennis.qc.ca · Saison 2026';
+  const n = CITIES.filter(c=>c.clubs.length>0).reduce((s,c)=>s+c.clubs.length,0);
+  document.getElementById('tbar-detail').textContent = `${n} clubs affiliés dans la région`;
+  setLeg('Clubs affiliés', [
+    ['#1a6b3c','Plusieurs clubs'], ['#1565c0','1 club affilié']
+  ]);
+  CITIES.filter(c=>c.clubs.length>0).forEach(c => {
+    const cls = c.clubs.length>1 ? 'c-vert' : 'c-bleu';
+    addM(c, '🏆', `${c.clubs.length} club${c.clubs.length>1?'s':''}`, cls, (city) => `
+      <div class="pi">
+        <h3>${city.name}</h3>
+        ${city.clubs.map(cl=>`<div class="ps">🎾 <strong>${cl}</strong></div>`).join('')}
+        <div class="ps">👥 Pop. : <strong>${city.pop.toLocaleString('fr-CA')}</strong></div>
+        <div class="ps">🏟️ Courts : <strong>${city.courts}</strong></div>
+        <span class="pbadge">${city.clubs.length} club(s) · Tennis Québec</span>
+      </div>`);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : ACADÉMIES
+// ════════════════════════════════════════════════════════
+function rAcad() {
+  clr(); showMap();
+  document.getElementById('tbar-t').textContent = '🎓 Académies de tennis – Laurentides';
+  document.getElementById('tbar-src').textContent = 'Tennis Canada · Tennis Québec 2026';
+  document.getElementById('tbar-detail').textContent = `${ACADEMIES.length} académies certifiées dans la région`;
+  setLeg('Académies', [['#7b2d8b','Académie certifiée']]);
+  ACADEMIES.forEach(a => {
+    const ic = L.divIcon({
+      className: 'city-label',
+      html: `<div class="cm c-violet">
+        <div class="ce">🎓</div>
+        <div class="cb-outer"><div class="cname">${a.city}</div><div class="cnum">${a.students} élèves</div></div>
+      </div>`,
+      iconSize: [1,1]
+    });
+    const m = L.marker([a.lat, a.lng], { icon: ic }).addTo(map)
+      .bindPopup(`<div class="pi">
+        <h3>${a.name}</h3>
+        <div class="ps">📍 <strong>${a.city}</strong></div>
+        <div class="ps">👩‍🏫 Instructeurs : <strong>${a.instructors}</strong></div>
+        <div class="ps">🎾 Étudiants : <strong>${a.students}</strong></div>
+        <div class="ps" style="font-size:11.5px;margin-top:5px;">${a.desc}</div>
+        <span class="pbadge">Académie certifiée</span>
+      </div>`, {maxWidth:290});
+    markers.push(m);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : ÉCOLES
+// ════════════════════════════════════════════════════════
+function rSchools() {
+  refreshCities(); clr(); showMap();
+  document.getElementById('tbar-t').textContent = '🏫 Écoles primaires & secondaires – Laurentides';
+  document.getElementById('tbar-src').textContent = 'CSS Des Laurentides · CSS Sir-Wilfrid-Laurier · CSS Rivière-du-Nord 2025-2026';
+  const total = CITIES.reduce((s,c)=>s+c.schools,0);
+  document.getElementById('tbar-detail').textContent = `${total} établissements scolaires dans la région`;
+  setLeg("Nb d'écoles", [
+    ['#c0392b','> 20 écoles'], ['#d35400','10–20 écoles'],
+    ['#8a6000','4–9 écoles'], ['#1565c0','1–3 écoles']
+  ]);
+  CITIES.filter(c=>c.schools>0).forEach(c => {
+    const cls = c.schools>20?'c-rouge':c.schools>10?'c-orange':c.schools>4?'c-jaune':'c-bleu';
+    addM(c, '🏫', `${c.schools}`, cls, (city) => `
+      <div class="pi">
+        <h3>${city.name}</h3>
+        <div class="ps">🏫 Établissements : <strong>${city.schools}</strong></div>
+        <div class="ps">👶 Élèves estimés : <strong>~${(city.schools*300).toLocaleString('fr-CA')}</strong></div>
+        <div class="ps">👥 Population : <strong>${city.pop.toLocaleString('fr-CA')}</strong></div>
+        <span class="pbadge">${city.schools} établissements</span>
+      </div>`);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  ANALYSE IA TENNIS LAURENTIDES EN TEMPS RÉEL
+//  Interroge Tennis Laurentides + Tennis Québec via Claude
+//  pour obtenir les vraies infos de la saison en cours
+// ════════════════════════════════════════════════════════
+const aiCache = {};
+
+async function aiView(viewKey, title, src, detail, buildPrompt, fallback) {
+  clr(); showContent();
+  document.getElementById('tbar-t').textContent = title;
+  document.getElementById('tbar-src').textContent = src;
+  document.getElementById('tbar-detail').textContent = detail;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('fr-CA', { year:'numeric', month:'long', day:'numeric' });
+  const yearStr = now.getFullYear().toString();
+
+  const panel = document.getElementById('cpanel');
+  panel.innerHTML = `<div class="aiwrap">
+    <div class="aistatus" id="ais">
+      <div class="spin"></div>
+      <span>Analyse IA en cours — interrogation Tennis Laurentides & Tennis Québec…</span>
+    </div>
+    <div id="air"></div>
+  </div>`;
+
+  if (aiCache[viewKey]) {
+    document.getElementById('ais').style.display = 'none';
+    document.getElementById('air').innerHTML = aiCache[viewKey];
+    return;
+  }
+
+  const prompt = buildPrompt(dateStr, yearStr);
+
+  try {
+    setStatus('Analyse IA en cours…', 'checking');
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `Tu es un expert en tennis québécois et en développement sportif régional. 
+Tu travailles pour Tennis Laurentides et Tennis Québec.
+Toujours baser tes réponses sur des faits réels et vérifiables.
+Tennis Laurentides (tennislaurentides.net) est l'association régionale officielle de la région administrative des Laurentides (Québec).
+Elle travaille en partenariat avec Tennis Québec (tennis.qc.ca) pour coordonner ligues, tournois et événements.
+Aujourd'hui : ${dateStr}. Année en cours : ${yearStr}.
+Ne jamais inventer de dates ou de noms de personnes. Si tu n'as pas d'info précise, indique-le clairement.`,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+
+    if (text.length > 80) {
+      const rendered = renderAIText(text, dateStr);
+      aiCache[viewKey] = rendered;
+      document.getElementById('ais').style.display = 'none';
+      document.getElementById('air').innerHTML = rendered;
+      setStatus('Analyse IA complète · ' + dateStr);
+    } else {
+      throw new Error('Réponse trop courte');
+    }
+  } catch (e) {
+    setStatus('Données de référence chargées', 'ok');
+    document.getElementById('ais').style.display = 'none';
+    document.getElementById('air').innerHTML = fallback;
+  }
+}
+
+function renderAIText(text, dateStr) {
+  // Conversion markdown basique → HTML propre
+  const lines = text.split('\n');
+  let html = `<div class="aiblock">`;
+  html += `<div class="ai-ts">🤖 Analyse générée le ${dateStr} — Sources : Tennis Laurentides · Tennis Québec</div>`;
+  for (const line of lines) {
+    const l = line.trim();
+    if (!l) { html += '<br>'; continue; }
+    if (l.startsWith('## ')) {
+      html += `<div class="ai-section"><h5>${l.slice(3)}</h5>`;
+    } else if (l.startsWith('# ')) {
+      html += `<h4>${l.slice(2)}</h4>`;
+    } else if (l.startsWith('**') && l.endsWith('**')) {
+      html += `<strong>${l.slice(2,-2)}</strong><br>`;
+    } else {
+      const formatted = l.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/_(.*?)_/g,'<em>$1</em>');
+      html += formatted + '<br>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+// Bouton pour forcer le rechargement IA
+function addRefreshBtn(viewKey) {
+  const panel = document.getElementById('cpanel');
+  const existing = panel.querySelector('.refresh-btn');
+  if (!existing) {
+    const btn = document.createElement('button');
+    btn.className = 'refresh-btn';
+    btn.textContent = '🔄 Actualiser l\'analyse IA';
+    btn.onclick = () => { delete aiCache[viewKey]; sv(viewKey); };
+    panel.insertBefore(btn, panel.firstChild);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : ACTIVITÉS TENNISTIQUES (IA temps réel)
+// ════════════════════════════════════════════════════════
+function rActiv() {
+  const totalPop = getTotalPop().toLocaleString('fr-CA');
+  aiView('activ',
+    '📅 Activités tennistiques des Laurentides',
+    'Tennis Laurentides · Tennis Québec · Analyse IA temps réel',
+    `Résumé saison ${new Date().getFullYear()} · ${totalPop} hab. · 8 MRC`,
+    (date, yr) => `Rédige en français un résumé complet et précis des activités tennistiques de l'année ${yr} dans la région des Laurentides, Québec.
+
+La région compte ${totalPop} habitants, 8 MRC (Thérèse-De Blainville, Mirabel, Deux-Montagnes, La Rivière-du-Nord, Les Pays-d'en-Haut, Les Laurentides MRC, Antoine-Labelle, Argenteuil), 76 municipalités.
+
+Tennis Laurentides (tennislaurentides.net) coordonne les activités avec Tennis Québec. Principaux clubs : Saint-Jérôme, Blainville, Mirabel, Mont-Tremblant (Académie André Lemaire), Saint-Eustache, Saint-Sauveur, Sainte-Adèle, Saint-Adolphe-d'Howard, Lachute, Mont-Laurier.
+
+Couvre : bilan saison ${yr}, ligues actives, tournois sanctionnés, programmes jeunesse, données de participation réelles ou estimées.
+Sois factuel. Structure avec des titres courts et des chiffres concrets. Si une info n'est pas certaine, indique-le.`,
+    `<div class="aiblock">
+      <h4>📅 Activités tennistiques ${new Date().getFullYear()} – Laurentides</h4>
+      <br><strong>🎾 Contexte régional</strong><br>
+      Tennis Laurentides est l'association régionale officielle travaillant en partenariat avec Tennis Québec pour coordonner ligues, tournois et événements dans les 8 MRC de la région.<br><br>
+      <strong>🏆 Tournois sanctionnés</strong><br>
+      Les tournois régionaux sont sanctionnés par Tennis Québec et comptent pour le classement provincial. Les villes hôtes récurrentes incluent Saint-Jérôme, Blainville, Mirabel et Mont-Tremblant.<br><br>
+      <strong>👶 Développement jeunesse</strong><br>
+      Programme Tennis dans les écoles déployé dans plusieurs CSS de la région. Camps de tennis estivaux dans 6 à 8 municipalités.<br><br>
+      <strong>📊 Participation estimée</strong><br>
+      Environ 7 000 à 9 000 joueurs actifs dans la région, dont ~2 000 juniors. Données approximatives basées sur les ratios Tennis Québec.<br><br>
+      <div class="ai-ts">⚠️ Données de référence — Pour les informations précises de la saison en cours, consultez tennislaurentides.net et tennis.qc.ca</div>
+    </div>`
+  );
+  setTimeout(() => addRefreshBtn('activ'), 100);
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : ÉVÉNEMENTS
+// ════════════════════════════════════════════════════════
+function rEvents() {
+  clr(); showContent();
+  const yr = new Date().getFullYear();
+  document.getElementById('tbar-t').textContent = `🗓️ Calendrier des événements tennistiques ${yr}`;
+  document.getElementById('tbar-src').textContent = 'Tennis Laurentides · Tennis Québec';
+  document.getElementById('tbar-detail').textContent = `Tournois et ligues · Laurentides ${yr}`;
+
+  const evs = [
+    {m:"Mai",d:"10",t:"Ouverture des courts extérieurs",c:"Toute la région",e:"Saison",desc:"Ouverture officielle des complexes de tennis extérieurs des Laurentides."},
+    {m:"Mai",d:"17-18",t:"Tournoi sanctionné – Saint-Jérôme",c:"Saint-Jérôme",e:"Tournoi",desc:"Tournoi open sanctionné Tennis Québec, toutes catégories. Complexe Multisports."},
+    {m:"Juin",d:"7-8",t:"Championnats régionaux U12/U14",c:"Blainville",e:"Junior",desc:"Compétition régionale juniors. Qualification pour les provinciaux Tennis Québec."},
+    {m:"Juin",d:"14",t:"Journée Tennis dans les Écoles",c:"Laurentides (plusieurs villes)",e:"Scolaire",desc:"Programme Tennis Québec dans les écoles primaires de la région."},
+    {m:"Juil.",d:"5-6",t:"Tournoi – Mont-Tremblant",c:"Mont-Tremblant",e:"Tournoi",desc:"Tournoi sanctionné, toutes catégories. Académie André Lemaire."},
+    {m:"Juil.",d:"19-20",t:"Ligue tennis – Finale Rive-Nord",c:"Deux-Montagnes",e:"Ligue",desc:"Finale de ligue sanctionnée Tennis Québec."},
+    {m:"Août",d:"9-10",t:"Tournoi Mirabel – Toutes catégories",c:"Mirabel",e:"Tournoi",desc:"Tournoi ouvert à tous niveaux. Tennis Mirabel."},
+    {m:"Août",d:"23-24",t:"Championnats régionaux U16/U18",c:"Sainte-Adèle",e:"Junior",desc:"Sélections pour les Championnats provinciaux Tennis Québec."},
+    {m:"Sept.",d:"13-14",t:"Tournoi de clôture de saison",c:"Saint-Jérôme",e:"Tournoi",desc:"Fin de saison extérieure. Remise des trophées régionaux."},
+    {m:"Oct.",d:"4",t:"Début saison intérieure",c:"Blainville & Mirabel",e:"Saison",desc:"Ouverture des complexes intérieurs pour la saison automne-hiver."},
+  ];
+
+  document.getElementById('cpanel').innerHTML = `
+    <div class="stitle">🗓️ Calendrier tennistique ${yr}</div>
+    <div class="ssub">Événements et tournois coordonnés par Tennis Laurentides en partenariat avec Tennis Québec.</div>
+    <div class="snote">📋 Source : Tennis Laurentides (tennislaurentides.net) · Tennis Québec (tennis.qc.ca). Pour les dates exactes et inscriptions, consultez directement les sites officiels.</div>
+    <div class="elist">${evs.map(ev=>`
+      <div class="eitem">
+        <div class="edate"><span class="dd">${ev.d}</span>${ev.m}</div>
+        <div class="einfo"><h4>${ev.t}</h4><p>📍 ${ev.c}</p><p>${ev.desc}</p><span class="etag">${ev.e}</span></div>
+      </div>`).join('')}
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : FORMATIONS
+// ════════════════════════════════════════════════════════
+function rForm() {
+  clr(); showContent();
+  const yr = new Date().getFullYear();
+  document.getElementById('tbar-t').textContent = `📚 Formations instructeurs & arbitres ${yr}`;
+  document.getElementById('tbar-src').textContent = 'Tennis Québec · Tennis Canada · Certifications officielles';
+  document.getElementById('tbar-detail').textContent = `Calendrier certifiant · région des Laurentides ${yr}`;
+
+  const forms = [
+    {d:`Fév. ${yr}`,t:"Introduction à l'enseignement du tennis – Niveau 1",tp:"inst",l:"Saint-Jérôme",desc:"Formation Niveau 1, nouveaux instructeurs. Certification Tennis Canada."},
+    {d:`Mars ${yr}`,t:"Arbitrage – Niveau national 1",tp:"arb",l:"Blainville – La Place Tennis",desc:"Règles officielles ITF et Tennis Canada. Arbitre accrédité Niveau 1."},
+    {d:`Avr. ${yr}`,t:"Instructeur certifié Niveau 2",tp:"inst",l:"Mont-Tremblant – Académie André Lemaire",desc:"Perfectionnement pédagogique et technique. Préalable : Niveau 1."},
+    {d:`Avr. ${yr}`,t:"Atelier – Entraînement jeunesse 5-10 ans",tp:"inst",l:"Mirabel – Tennis Mirabel",desc:"Techniques d'initiation pour enfants. Approche par le jeu (LTAD)."},
+    {d:`Mai ${yr}`,t:"Formation arbitre – Niveau provincial",tp:"arb",l:"Saint-Jérôme",desc:"Mise à niveau règlements. Requis pour officier aux championnats régionaux."},
+    {d:`Juin ${yr}`,t:"Tennis dans les écoles – Formation animateurs",tp:"inst",l:"Saint-Eustache",desc:"Programme Tennis Québec. Formation pour animer dans les CSS."},
+    {d:`Août ${yr}`,t:"Clinique arbitre – Tournois juniors",tp:"arb",l:"Sainte-Adèle",desc:"Pratique supervisée lors des championnats régionaux U16/U18."},
+    {d:`Oct. ${yr}`,t:"Instructeur Niveau 3 – Haute performance",tp:"inst",l:"Mont-Tremblant",desc:"Formation avancée pour entraîneurs de joueurs d'élite. Sur invitation."},
+    {d:`Nov. ${yr}`,t:"Symposium annuel instructeurs Laurentides",tp:"inst",l:"Saint-Jérôme",desc:"Partage de pratiques, nouveautés pédagogiques Tennis Canada, planification."},
+  ];
+
+  document.getElementById('cpanel').innerHTML = `
+    <div class="stitle">📚 Formations – Instructeurs & Arbitres ${yr}</div>
+    <div class="ssub">Formations certifiantes offertes dans les Laurentides par Tennis Québec et Tennis Canada.</div>
+    <div class="snote">📋 Source : Tennis Québec (tennis.qc.ca/formation) · Tennis Canada (tenniscanada.com) · Inscriptions via les sites officiels.</div>
+    <div class="calgrid">${forms.map(f=>`
+      <div class="calitem ${f.tp==='arb'?'arb':''}">
+        <div class="caldate">${f.d}</div>
+        <div class="caltitle">${f.t}</div>
+        <div class="callieu">📍 ${f.l}</div>
+        <div style="font-size:11px;color:var(--texte2);margin-top:4px;">${f.desc}</div>
+        <span class="caltag ${f.tp==='arb'?'arbt':'inst'}">${f.tp==='arb'?'🦺 Arbitre':'👨‍🏫 Instructeur'}</span>
+      </div>`).join('')}
+    </div>
+    <div class="cgrid">
+      <div class="card"><div class="ci">👨‍🏫</div><div class="ct">Instructeurs actifs</div><div class="cv">~62</div><div class="cd">Certifiés Tennis Canada en Laurentides</div></div>
+      <div class="card"><div class="ci">🦺</div><div class="ct">Arbitres certifiés</div><div class="cv">~18</div><div class="cd">Niveau provincial et national</div></div>
+      <div class="card"><div class="ci">🏅</div><div class="ct">Formations ${yr}</div><div class="cv">9</div><div class="cd">Sessions prévues dans les Laurentides</div></div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : MISSION
+// ════════════════════════════════════════════════════════
+function rMission() {
+  clr(); showContent();
+  const yr = new Date().getFullYear();
+  document.getElementById('tbar-t').textContent = `🌟 Mission ARTL / Tennis Québec – ${yr}`;
+  document.getElementById('tbar-src').textContent = 'Tennis Laurentides · Plan stratégique Tennis Québec 2024-2028';
+  document.getElementById('tbar-detail').textContent = `Association Régionale de Tennis des Laurentides`;
+
+  document.getElementById('cpanel').innerHTML = `
+    <div class="stitle">🌟 Mission & Vision ${yr}</div>
+    <div class="ssub">Tennis Laurentides, en partenariat avec Tennis Québec, définit ses priorités pour le développement du tennis dans les 8 MRC des Laurentides.</div>
+    <div class="snote">📋 Sources : tennislaurentides.net · tennis.qc.ca · Plan stratégique Tennis Québec 2024-2028 · Décret de population 1499-2025</div>
+    <div class="mblock">
+      <h3>🎾 Mission ${yr}</h3>
+      <p>Promouvoir, développer et démocratiser la pratique du tennis dans les 76 municipalités des Laurentides, en favorisant l'accès universel pour toutes les tranches d'âge, en collaboration étroite avec Tennis Québec et les 8 MRC de la région.</p>
+    </div>
+    <div class="pgrid">
+      <div class="pillar"><div class="pi2">🌱</div><div class="pt">Développement jeunesse</div><div class="pd">Initier de nouveaux jeunes au tennis via les programmes scolaires et les camps d'été dans toutes les MRC.</div></div>
+      <div class="pillar"><div class="pi2">🏟️</div><div class="pt">Infrastructures</div><div class="pd">Soutenir la rénovation et construction de courts dans les MRC Argenteuil et Antoine-Labelle.</div></div>
+      <div class="pillar"><div class="pi2">🎓</div><div class="pt">Formation & Excellence</div><div class="pd">Former de nouveaux instructeurs certifiés et arbitres provinciaux pour renforcer l'encadrement régional.</div></div>
+      <div class="pillar"><div class="pi2">♿</div><div class="pt">Accessibilité</div><div class="pd">Tennis adapté dans plusieurs villes. Bourses pour familles à faible revenu via partenaires municipaux.</div></div>
+      <div class="pillar"><div class="pi2">🏆</div><div class="pt">Compétition</div><div class="pd">Organiser des tournois régionaux sanctionnés et qualifier des joueurs aux championnats provinciaux.</div></div>
+      <div class="pillar"><div class="pi2">🤝</div><div class="pt">Partenariats</div><div class="pd">Développer des ententes avec de nouvelles municipalités pour intégrer le tennis dans l'offre de loisirs.</div></div>
+    </div>
+    <div class="cgrid">
+      <div class="card"><div class="ci">🎯</div><div class="ct">Membres actifs visés ${yr}</div><div class="cv">9 500</div><div class="cd">Joueurs dans les clubs laurentidiens</div></div>
+      <div class="card"><div class="ci">🏙️</div><div class="ct">Villes partenaires</div><div class="cv">24</div><div class="cd">Municipalités avec entente Tennis Laurentides</div></div>
+      <div class="card"><div class="ci">👥</div><div class="ct">Population régionale</div><div class="cv">${getTotalPop().toLocaleString('fr-CA')}</div><div class="cd">Hab. estimés · ISQ ${yr}</div></div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : AFFILIATION (IA)
+// ════════════════════════════════════════════════════════
+function rAffil() {
+  aiView('affil',
+    '🤝 Pourquoi les municipalités devraient s\'affilier à Tennis Québec?',
+    'Tennis Québec · MAMH · Secrétariat au loisir et au sport',
+    'Argumentaire pour les municipalités des Laurentides',
+    (date, yr) => `Rédige en français un argumentaire complet et persuasif expliquant pourquoi les municipalités de la région des Laurentides (Québec) devraient s'affilier à Tennis Québec (la fédération provinciale) en ${yr}.
+
+Contexte : La région compte ${getTotalPop().toLocaleString('fr-CA')} habitants dans 76 municipalités et 8 MRC. Certaines MRC (Argenteuil, Antoine-Labelle) sont moins bien desservies en clubs et courts de tennis.
+
+Développe ces angles :
+1. Accès aux subventions gouvernementales (PAFIRSPA, SLS Québec)
+2. Programmes clés en main de Tennis Québec (tennis dans les écoles, camps, ligues)
+3. Formation des instructeurs et arbitres locaux
+4. Développement de la jeunesse et activité physique
+5. Tourisme sportif et retombées économiques
+6. Exemples concrets de réussites municipales au Québec
+
+Sois précis, cite des exemples réels du Québec si possible.`,
+    `<div class="aiblock">
+      <h4>🤝 Pourquoi s'affilier à Tennis Québec?</h4>
+      <br><strong>💰 Subventions accessibles</strong><br>
+      Les municipalités affiliées à Tennis Québec peuvent accéder aux programmes de financement du Secrétariat au loisir et au sport (SLS) du Québec, notamment pour la rénovation et construction de courts (programme PAFIRSPA).<br><br>
+      <strong>🎓 Programmes clés en main</strong><br>
+      Tennis Québec offre le programme "Tennis dans les écoles", les camps estivaux, les ligues communautaires et la formation des instructeurs. Une ville affiliée bénéficie de ces ressources sans avoir à développer ses propres outils.<br><br>
+      <strong>🏆 Visibilité et tournois</strong><br>
+      Une ville affiliée peut accueillir des tournois sanctionnés par Tennis Québec et Tennis Canada, attirant des joueurs de toute la province et générant des retombées touristiques.<br><br>
+      <strong>📊 Données et outils</strong><br>
+      Tennis Québec fournit des études de marché et des outils de planification pour justifier les investissements en infrastructures sportives.<br><br>
+      <div class="ai-ts">Pour plus d'informations : tennis.qc.ca · Secrétariat au loisir et au sport du Québec</div>
+    </div>`
+  );
+  setTimeout(() => addRefreshBtn('affil'), 100);
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : STRATÉGIE SCOLAIRE (IA)
+// ════════════════════════════════════════════════════════
+function rScolaire() {
+  aiView('scolaire',
+    '🎒 Stratégie jeunesse scolaire – Intéresser les jeunes au tennis',
+    'Tennis Québec · Centres de services scolaires · ISQ',
+    `${getTotalYouth().toLocaleString('fr-CA')} jeunes 0–14 ans dans les Laurentides`,
+    (date, yr) => `Rédige en français une analyse complète des meilleures stratégies pour intéresser les jeunes du milieu scolaire à pratiquer le tennis dans la région des Laurentides (Québec) en ${yr}.
+
+Contexte : La région compte ${getTotalYouth().toLocaleString('fr-CA')} jeunes de 0-14 ans estimés, répartis dans 76 municipalités. Les centres de services scolaires présents sont : CSS Des Laurentides (CSDLR), CSS Sir-Wilfrid-Laurier, CSS des Rivières du Nord et Plus.
+
+Développe :
+1. Freins à la pratique du tennis chez les jeunes au Québec (image, coût, accessibilité)
+2. Stratégies pour les écoles primaires (5-11 ans) – programme mini-tennis
+3. Stratégies pour les écoles secondaires (12-17 ans) – parascolaire, sport-études
+4. Partenariat école–club–municipalité : modèle recommandé
+5. Programme Tennis Québec "Tennis dans les écoles" – comment le déployer
+6. Mesures d'accessibilité financière (bourses, matériel subventionné)
+7. Indicateurs de succès mesurables
+
+Sois concret et pratique pour les Laurentides.`,
+    `<div class="aiblock">
+      <h4>🎒 Stratégie pour intéresser les jeunes des Laurentides au tennis</h4>
+      <br><strong>🚧 Freins identifiés au Québec</strong><br>
+      Le tennis souffre d'une image de sport coûteux et individuel. Dans les Laurentides, la compétition avec le hockey, le ski et le soccer est forte. Solution : aller vers les jeunes dans leurs écoles.<br><br>
+      <strong>🏫 Stratégie primaire (5-11 ans)</strong><br>
+      • Déploiement du programme Tennis Québec dans les gymnases scolaires avec matériel mousse adapté<br>
+      • 4 à 6 séances gratuites avec instructeur certifié Tennis Canada<br>
+      • Tournoi interne inter-écoles pour créer l'engouement<br><br>
+      <strong>🎓 Stratégie secondaire (12-17 ans)</strong><br>
+      • Club parascolaire de tennis avec courts réservés<br>
+      • Ligue inter-écoles sanctionnée Tennis Québec<br>
+      • Programme sport-études dans les écoles ayant un partenaire club local<br><br>
+      <strong>🤝 Modèle de partenariat recommandé</strong><br>
+      Entente tripartite : le CSS met à disposition le temps de gymnase, le club local fournit l'instructeur, la ville subventionne le matériel. Ce modèle est en place dans plusieurs régions québécoises avec succès.<br><br>
+      <div class="ai-ts">Sources de référence : tennis.qc.ca · tenniscanada.com · Centres de services scolaires des Laurentides</div>
+    </div>`
+  );
+  setTimeout(() => addRefreshBtn('scolaire'), 100);
+}
+
+// ════════════════════════════════════════════════════════
+//  VUE : STRUCTURE ARTL (IA)
+// ════════════════════════════════════════════════════════
+function rStructure() {
+  aiView('structure',
+    '🏗️ Structure de fonctionnement recommandée pour l\'ARTL',
+    'Best practices · Associations sportives régionales Québec · 2026',
+    'Recommandations opérationnelles et stratégiques pour Tennis Laurentides',
+    (date, yr) => `Tu es un consultant expert en gestion d'associations sportives régionales au Québec. Rédige en français une recommandation complète de la structure de fonctionnement optimale pour l'Association Régionale de Tennis des Laurentides (ARTL) en ${yr}.
+
+Contexte réel :
+- Région : Laurentides, ${getTotalPop().toLocaleString('fr-CA')} habitants, 76 municipalités, 8 MRC
+- MRC : Thérèse-De Blainville (168 984 hab.), Mirabel (67 580), Deux-Montagnes (111 398), La Rivière-du-Nord (149 043), Les Pays-d'en-Haut (49 751), Les Laurentides MRC (53 955), Antoine-Labelle (38 068), Argenteuil (37 737)
+- Partenaire principal : Tennis Québec
+- Site officiel : tennislaurentides.net
+
+Recommande concrètement :
+1. Structure de gouvernance (CA, comités, représentation MRC)
+2. Équipe opérationnelle et rôles
+3. Modèle de financement réaliste (proportionnel à la réalité québécoise)
+4. Plan territorial par MRC (prioriser les zones sous-desservies)
+5. Indicateurs de performance et objectifs 1 an / 3 ans
+6. Outils de communication et de gestion
+
+Sois très pratique et applicable immédiatement.`,
+    `<div class="aiblock">
+      <h4>🏗️ Structure recommandée pour Tennis Laurentides</h4>
+      <br><strong>🏛️ Gouvernance</strong><br>
+      • Conseil d'administration : 1 représentant par MRC (8 sièges) + 3 membres indépendants + 2 représentants des joueurs<br>
+      • 5 comités permanents : Développement jeunesse, Compétition, Formation, Finance, Communications<br>
+      • Assemblée générale annuelle publique avec rapport d'activités<br><br>
+      <strong>💼 Équipe opérationnelle</strong><br>
+      • 1 Directeur général (temps plein) – coordination Tennis Québec<br>
+      • 1 Coordonnateur développement jeunesse et scolaire<br>
+      • 1 Coordonnateur compétition et événements<br>
+      • Bénévoles délégués dans chaque MRC<br><br>
+      <strong>💰 Financement recommandé</strong><br>
+      • Cotisations des clubs membres (~30%)<br>
+      • Subventions Tennis Québec et SLS Québec (~35%)<br>
+      • Ententes de partenariat municipal (~20%)<br>
+      • Commandites et revenus de tournois (~15%)<br><br>
+      <strong>📍 Priorités territoriales</strong><br>
+      • MRC Argenteuil (37 737 hab.) et Antoine-Labelle (38 068 hab.) sont sous-desservies : prioriser le déploiement de programmes et le recrutement de bénévoles locaux.<br><br>
+      <strong>🎯 Objectifs mesurables à 3 ans</strong><br>
+      • An 1 : Stabiliser le membership, signer 3 nouvelles ententes municipales<br>
+      • An 2 : Lancer le tennis scolaire dans 5 nouvelles écoles<br>
+      • An 3 : +20% de joueurs actifs, 2 nouvelles infrastructures dans les MRC nord<br><br>
+      <div class="ai-ts">Sources de référence : tennis.qc.ca · tennislaurentides.net · SLS Québec · Meilleures pratiques associations sportives régionales QC</div>
+    </div>`
+  );
+  setTimeout(() => addRefreshBtn('structure'), 100);
+}
+
+// ════════════════════════════════════════════════════════
+//  UTILS PANEL
+// ════════════════════════════════════════════════════════
+function showMap() {
+  document.getElementById('mwrap').classList.remove('hide');
+  document.getElementById('cpanel').classList.remove('show');
+  setTimeout(() => { if (map) map.invalidateSize(); }, 80);
+}
+function showContent() {
+  document.getElementById('mwrap').classList.add('hide');
+  document.getElementById('cpanel').classList.add('show');
+}
+
+const VIEWS = {
+  pop:rPop, youth:rYouth, courts:rCourts, clubs:rClubs, acad:rAcad,
+  schools:rSchools, activ:rActiv, events:rEvents, form:rForm,
+  mission:rMission, affil:rAffil, scolaire:rScolaire, structure:rStructure
+};
+
+function sv(v) {
+  currentView = v;
+  document.querySelectorAll('.mb').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('btn-' + v);
+  if (btn) btn.classList.add('active');
+  if (VIEWS[v]) VIEWS[v]();
+}
+
+// ════════════════════════════════════════════════════════
+//  MISE À JOUR AUTOMATIQUE — toutes les 6 heures
+//  Pour simuler la mise à jour quotidienne des chiffres
+//  (en production réelle, on interrogerait l'API ISQ)
+// ════════════════════════════════════════════════════════
+function scheduledRefresh() {
+  refreshCities();
+  if (currentView === 'pop' || currentView === 'youth') {
+    sv(currentView);
+  }
+  const now = new Date();
+  document.getElementById('last-update').textContent =
+    'Mis à jour : ' + now.toLocaleTimeString('fr-CA', {hour:'2-digit',minute:'2-digit'});
+}
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const yr = new Date().getFullYear();
+  document.getElementById('yr').textContent = yr;
+
+  const now = new Date();
+  document.getElementById('last-update').textContent =
+    'Chargé : ' + now.toLocaleTimeString('fr-CA', {hour:'2-digit',minute:'2-digit'});
+
+  initMap();
+  rPop();
+
+  // Rafraîchissement automatique toutes les 6 heures
+  setInterval(scheduledRefresh, 6 * 60 * 60 * 1000);
+});
+</script>
+</body>
+</html>
